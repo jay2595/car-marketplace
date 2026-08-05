@@ -1,0 +1,21 @@
+{{ .Chart.Name }} {{ .Chart.Version }} deployed as release "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}".
+
+Image:    {{ .Values.image.repository }}:{{ .Values.image.tag }}
+Replicas: {{ if .Values.autoscaling.enabled }}HPA {{ .Values.autoscaling.minReplicas }}-{{ .Values.autoscaling.maxReplicas }} @ {{ .Values.autoscaling.targetCPUUtilizationPercentage }}% CPU{{ else }}{{ .Values.replicaCount }} (static){{ end }}
+
+{{- if .Values.ingress.enabled }}
+
+Application URL:
+{{- range .Values.ingress.hosts }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ .host }}
+{{- end }}
+{{- else }}
+
+Port-forward to reach the app:
+  kubectl port-forward svc/{{ include "car-marketplace.fullname" . }} 8080:{{ .Values.service.port }} -n {{ .Release.Namespace }}
+{{- end }}
+
+Verify:
+  kubectl get pods,deploy,svc,ingress,hpa -n {{ .Release.Namespace }}
+  helm test {{ .Release.Name }} -n {{ .Release.Namespace }}
+  helm history {{ .Release.Name }} -n {{ .Release.Namespace }}

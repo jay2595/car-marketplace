@@ -1,0 +1,13 @@
+node_modules
+npm-debug.log
+coverage
+.git
+.github
+.scannerwork
+k8s
+docs
+scripts
+Jenkinsfile
+*.md
+tools
+reports

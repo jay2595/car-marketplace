@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "car-marketplace.fullname" . }}-test-connection"
+  labels:
+    {{- include "car-marketplace.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": hook-succeeded,hook-failed
+spec:
+  restartPolicy: Never
+  containers:
+    - name: readiness
+      image: curlimages/curl:8.8.0
+      args:
+        - "-sSf"
+        - "http://{{ include "car-marketplace.fullname" . }}:{{ .Values.service.port }}/health/ready"

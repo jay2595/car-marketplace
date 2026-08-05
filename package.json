@@ -1,0 +1,20 @@
+{
+  "name": "car-marketplace",
+  "version": "1.0.0",
+  "description": "Canadian new and pre-owned vehicle marketplace - demo app for the Jenkins -> SonarQube -> Trivy -> ACR -> AKS DevSecOps pipeline",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "jest --coverage --coverageReporters=lcov --coverageReporters=text --passWithNoTests",
+    "generate:data": "node tools/generate-data.js"
+  },
+  "engines": { "node": ">=22" },
+  "dependencies": { "express": "^4.19.2" },
+  "devDependencies": { "jest": "^30.0.0", "supertest": "^7.0.0" },
+  "jest": {
+    "testEnvironment": "node",
+    "collectCoverageFrom": ["src/**/*.js", "server.js"],
+    "coveragePathIgnorePatterns": ["/node_modules/", "/tools/", "/public/"]
+  },
+  "private": true
+}

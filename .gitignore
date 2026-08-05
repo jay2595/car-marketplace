@@ -1,0 +1,7 @@
+node_modules/
+coverage/
+.scannerwork/
+*.log
+.env
+k8s/rendered/
+reports/

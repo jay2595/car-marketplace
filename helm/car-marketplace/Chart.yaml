@@ -1,0 +1,10 @@
+apiVersion: v2
+name: car-marketplace
+description: Node.js car marketplace API deployed to AKS from Jenkins
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords: [nodejs, car-marketplace, aks, devsecops]
+maintainers:
+  - name: Jay
+home: https://github.com/<you>/car-marketplace

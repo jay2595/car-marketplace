@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Car Marketplace — New &amp; Pre-Owned Vehicles in Canada</title>
+<meta name="description" content="Browse new, used and certified pre-owned vehicles across Canada. Search by make, model, year and budget, calculate your payment with provincial tax, and reserve online.">
+<link rel="stylesheet" href="/css/app.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230B2545'/><path d='M6 20h20l-2-6H8z' fill='%23fff'/><circle cx='11' cy='22' r='2.6' fill='%23fff'/><circle cx='21' cy='22' r='2.6' fill='%23fff'/></svg>">
+</head>
+<body>
+<a class="skip-link" href="#view">Skip to main content</a>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="#/" aria-label="Car Marketplace home">
+      <svg viewBox="0 0 32 32" width="32" height="32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#0B2545"/><path d="M6 20h20l-2-6H8z" fill="#fff"/><circle cx="11" cy="22" r="2.6" fill="#fff"/><circle cx="21" cy="22" r="2.6" fill="#fff"/></svg>
+      <span>Car<strong>Marketplace</strong></span>
+    </a>
+
+    <form class="header-search" id="header-search" role="search">
+      <input type="search" id="header-q" name="q" placeholder="Search make, model, year or keyword…" aria-label="Search vehicles">
+      <button type="submit" class="btn btn-primary btn-sm">Search</button>
+    </form>
+
+    <nav class="site-nav" aria-label="Main">
+      <a href="#/inventory">Inventory</a>
+      <a href="#/calculator">Payments</a>
+      <a href="#/preapproval">Financing</a>
+      <a href="#/tradein">Trade-In</a>
+      <a href="#/dealers">Dealers</a>
+      <a href="#/compare" class="pill-link">Compare <span class="count" id="compare-count">0</span></a>
+      <a href="#/saved" class="pill-link">Saved <span class="count" id="saved-count">0</span></a>
+      <a href="#/admin" class="muted-link">Admin</a>
+    </nav>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+  </div>
+</header>
+
+<main id="view" tabindex="-1"><div class="wrap"><p class="loading">Loading…</p></div></main>
+
+<footer class="site-footer">
+  <div class="wrap footer-grid">
+    <div>
+      <h4>Car Marketplace</h4>
+      <p class="small">A demonstration marketplace for new, used and certified pre-owned vehicles across Canada. All inventory, pricing and dealer information is fictional sample data.</p>
+    </div>
+    <div>
+      <h4>Shop</h4>
+      <ul><li><a href="#/inventory">All inventory</a></li><li><a href="#/inventory?condition=New">New vehicles</a></li><li><a href="#/inventory?condition=Certified%20Pre-Owned">Certified pre-owned</a></li><li><a href="#/inventory?electricOnly=true">Electric &amp; plug-in</a></li></ul>
+    </div>
+    <div>
+      <h4>Finance</h4>
+      <ul><li><a href="#/calculator">Payment calculator</a></li><li><a href="#/preapproval">Get pre-approved</a></li><li><a href="#/tradein">Value my trade</a></li></ul>
+    </div>
+    <div>
+      <h4>Canadian buyers</h4>
+      <ul class="small plain">
+        <li>Prices in Canadian dollars, before applicable taxes</li>
+        <li>GST / HST / PST / QST applied by province at checkout</li>
+        <li>Federal luxury tax applies to new vehicles over $100,000</li>
+        <li>Dealers are licensed by their provincial regulator</li>
+      </ul>
+    </div>
+  </div>
+  <div class="wrap footer-bottom small">
+    <span>© 2026 Car Marketplace — sample data for demonstration purposes.</span>
+    <span id="build-info" class="mono"></span>
+  </div>
+</footer>
+
+<script type="module" src="/js/app.js"></script>
+</body>
+</html>

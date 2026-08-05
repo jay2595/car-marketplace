@@ -1,0 +1,16 @@
+# Normalise everything to LF in the repo. Without this, Git on Windows commits
+# CRLF into the shell scripts and the Ubuntu VM fails with:
+#   /bin/bash^M: bad interpreter: No such file or directory
+* text=auto eol=lf
+
+*.sh        text eol=lf
+*.yaml      text eol=lf
+*.yml       text eol=lf
+*.tpl       text eol=lf
+Dockerfile  text eol=lf
+Jenkinsfile text eol=lf
+*.ps1       text eol=crlf
+
+*.png binary
+*.jpg binary
+*.svg text eol=lf

@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: car-marketplace-ingress
+  labels:
+    app: car-marketplace
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "8m"
+    # Uncomment once cert-manager + a ClusterIssuer are installed:
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - car-marketplace.example.com      # <-- change me
+      secretName: car-marketplace-tls
+  rules:
+    - host: car-marketplace.example.com    # <-- change me
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: car-marketplace-svc
+                port:
+                  number: 80

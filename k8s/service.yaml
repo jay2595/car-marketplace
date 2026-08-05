@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: car-marketplace-svc
+  labels:
+    app: car-marketplace
+spec:
+  type: ClusterIP          # Ingress fronts this. Use LoadBalancer to expose directly.
+  selector:
+    app: car-marketplace
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP

@@ -1,0 +1,129 @@
+# Default values for car-marketplace.
+# Jenkins overrides image.repository / image.tag / ingress host at deploy time.
+
+replicaCount: 2
+
+image:
+  repository: carmarketplaceacr.azurecr.io/car-marketplace   # overridden by Jenkins
+  tag: "latest"                                          # overridden by Jenkins (BUILD-SHA)
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []      # not needed: AKS is attached to ACR via managed identity
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels:
+  tier: frontend
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: http
+
+containerPort: 3000
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "8m"
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: car-marketplace.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: car-marketplace-tls
+      hosts:
+        - car-marketplace.example.com
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 60
+  targetMemoryUtilizationPercentage: 70
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# ---- Probes ---------------------------------------------------------------
+probes:
+  startup:
+    enabled: true
+    path: /health/live
+    failureThreshold: 30
+    periodSeconds: 2
+  liveness:
+    enabled: true
+    path: /health/live
+    initialDelaySeconds: 10
+    periodSeconds: 15
+    timeoutSeconds: 3
+    failureThreshold: 3
+  readiness:
+    enabled: true
+    path: /health/ready
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+# ---- Application config -> ConfigMap -> env vars --------------------------
+config:
+  APP_ENV: production
+  CURRENCY: CAD
+  DEFAULT_PROVINCE: ON          # drives the default tax calculation
+  DEFAULT_APR: "7.99"
+  DEFAULT_TERM_MONTHS: "60"
+  LOG_LEVEL: info
+  PORT: "3000"
+
+# ---- Sensitive values -> Secret -------------------------------------------
+# In production replace with Azure Key Vault + Secrets Store CSI driver.
+secrets:
+  enabled: true
+  data:
+    SESSION_SECRET: change-me-in-key-vault
+
+extraEnv: []
+  # - name: FEATURE_X
+  #   value: "true"
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 0
