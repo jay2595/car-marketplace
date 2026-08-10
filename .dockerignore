@@ -11,3 +11,5 @@ Jenkinsfile
 *.md
 tools
 reports
+.trivycache
+.git

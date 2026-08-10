@@ -6,11 +6,23 @@ RUN npm ci --omit=dev
 
 # ---- Stage 2: runtime -----------------------------------------------------
 FROM node:24-alpine AS runtime
+ARG APP_VERSION=dev
 ENV NODE_ENV=production \
-    PORT=3000
+    PORT=3000 \
+    APP_VERSION=${APP_VERSION}
 WORKDIR /app
 
 RUN addgroup -S app && adduser -S app -G app
+
+# The runtime only ever runs `node server.js` - it never needs a package manager.
+# Removing npm/npx/corepack/yarn eliminates CVEs in build-time tooling that would
+# otherwise be reported against a production image, and drops ~40 MB.
+# This is what resolved CVE-2026-59873 (node-tar bundled inside npm), rather
+# than suppressing it in .trivyignore.
+RUN rm -rf /usr/local/lib/node_modules/npm \
+           /usr/local/lib/node_modules/corepack \
+           /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
+           /opt/yarn-* /usr/local/bin/yarn /usr/local/bin/yarnpkg
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY --chown=app:app package*.json ./
