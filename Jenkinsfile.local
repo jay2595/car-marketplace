@@ -122,17 +122,29 @@ pipeline {
       steps {
         sh '''
           docker rm -f cm-smoke >/dev/null 2>&1 || true
-          docker run -d --name cm-smoke --network ${CI_NETWORK} ${LOCAL_IMAGE}
-          for i in $(seq 1 20); do
-            if docker run --rm --network ${CI_NETWORK} curlimages/curl:8.8.0 \
-                 -sf http://cm-smoke:3000/health/ready >/dev/null 2>&1; then
-              echo "app is READY"; break
+          docker run -d --name cm-smoke ${LOCAL_IMAGE}
+
+          # Probe using the container's own Node runtime - no image to pull,
+          # no dependency on a network name. Same approach as the HEALTHCHECK.
+          PROBE="require('"'"'http'"'"').get('"'"'http://127.0.0.1:3000/health/ready'"'"',r=>process.exit(r.statusCode===200?0:1)).on('"'"'error'"'"',()=>process.exit(1))"
+          READY=0
+          for i in $(seq 1 30); do
+            if docker exec cm-smoke node -e "$PROBE" >/dev/null 2>&1; then
+              echo "app is READY after $i attempt(s)"
+              READY=1
+              break
             fi
-            [ $i -eq 20 ] && { echo "app never became ready"; docker logs cm-smoke; exit 1; }
             sleep 2
           done
-          docker run --rm --network ${CI_NETWORK} curlimages/curl:8.8.0 -s http://cm-smoke:3000/api/info
-          echo
+
+          if [ "$READY" != "1" ]; then
+            echo "ERROR: app never became ready after 60s"
+            docker logs cm-smoke
+            exit 1
+          fi
+
+          echo "--- /api/info ---"
+          docker exec cm-smoke node -e "require('"'"'http'"'"').get('"'"'http://127.0.0.1:3000/api/info'"'"',r=>{let d='"'"''"'"';r.on('"'"'data'"'"',c=>d+=c);r.on('"'"'end'"'"',()=>console.log(d))})"
         '''
       }
       post { always { sh 'docker rm -f cm-smoke >/dev/null 2>&1 || true' } }
