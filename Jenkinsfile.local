@@ -1,0 +1,149 @@
+// Local rehearsal pipeline - stages 1 to 8 of the real Jenkinsfile, plus a smoke
+// test standing in for the deploy. No Azure resources, no cost.
+pipeline {
+  agent any
+
+  environment {
+    IMAGE_NAME            = 'car-marketplace'
+    TRIVY_REPORT_SEVERITY = 'HIGH,CRITICAL'
+    TRIVY_FAIL_SEVERITY   = 'CRITICAL'
+    TRIVY_CACHE_DIR       = "${WORKSPACE}/.trivycache"
+    SONAR_SERVER          = 'SonarQube-Local'
+    SONAR_SCANNER         = 'SonarScanner'
+    CI_NETWORK            = 'car-marketplace-ci_ci'
+  }
+
+  options {
+    timestamps()
+    ansiColor('xterm')
+    disableConcurrentBuilds()
+    timeout(time: 25, unit: 'MINUTES')
+    buildDiscarder(logRotator(numToKeepStr: '15'))
+  }
+
+  stages {
+    stage('1. Checkout') {
+      steps {
+        checkout scm
+        script {
+          env.GIT_COMMIT_SHORT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+          env.IMAGE_TAG        = "${env.BUILD_NUMBER}-${env.GIT_COMMIT_SHORT}"
+          env.LOCAL_IMAGE      = "${env.IMAGE_NAME}:${env.IMAGE_TAG}"
+          currentBuild.displayName = "#${env.BUILD_NUMBER} - ${env.GIT_COMMIT_SHORT}"
+        }
+        sh 'node --version && npm --version && docker --version && trivy --version'
+      }
+    }
+
+    stage('2. Install dependencies') {
+      steps { sh 'npm ci || npm install' }
+    }
+
+    stage('3. Unit tests') {
+      steps { sh 'npm test' }
+      post { always { archiveArtifacts artifacts: 'coverage/lcov.info', allowEmptyArchive: true } }
+    }
+
+    stage('4. SonarQube analysis') {
+      steps {
+        script {
+          def scannerHome = tool "${env.SONAR_SCANNER}"
+          withSonarQubeEnv("${env.SONAR_SERVER}") {
+            sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=car-marketplace -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info"
+          }
+        }
+      }
+    }
+
+    stage('5. Quality Gate') {
+      steps {
+        timeout(time: 8, unit: 'MINUTES') {
+          waitForQualityGate abortPipeline: true
+        }
+      }
+    }
+
+    stage('6. Trivy filesystem scan') {
+      steps {
+        sh '''
+          mkdir -p ${TRIVY_CACHE_DIR} reports
+          trivy --cache-dir ${TRIVY_CACHE_DIR} fs \
+            --scanners vuln,secret,misconfig \
+            --severity ${TRIVY_REPORT_SEVERITY} --ignore-unfixed \
+            --no-progress --format table --output reports/trivy-fs.txt .
+
+          trivy --cache-dir ${TRIVY_CACHE_DIR} fs \
+            --scanners vuln,secret \
+            --severity ${TRIVY_FAIL_SEVERITY} --ignore-unfixed \
+            --exit-code 1 --no-progress --quiet .
+        '''
+      }
+      post {
+        always  { archiveArtifacts artifacts: 'reports/trivy-fs.txt', allowEmptyArchive: true }
+        failure { echo 'BLOCKED: critical vulnerability or secret in the source tree.' }
+      }
+    }
+
+    stage('7. Build Docker image') {
+      steps {
+        sh '''
+          docker build --build-arg APP_VERSION=${IMAGE_TAG} -t ${LOCAL_IMAGE} .
+          docker images ${IMAGE_NAME} | head -5
+        '''
+      }
+    }
+
+    stage('8. Trivy image scan') {
+      steps {
+        sh '''
+          mkdir -p reports
+          trivy --cache-dir ${TRIVY_CACHE_DIR} image \
+            --severity ${TRIVY_REPORT_SEVERITY} --ignore-unfixed \
+            --no-progress --format table --output reports/trivy-image.txt ${LOCAL_IMAGE}
+
+          trivy --cache-dir ${TRIVY_CACHE_DIR} image \
+            --severity ${TRIVY_REPORT_SEVERITY} --ignore-unfixed \
+            --no-progress --format json --output reports/trivy-image.json ${LOCAL_IMAGE}
+
+          trivy --cache-dir ${TRIVY_CACHE_DIR} image \
+            --severity ${TRIVY_FAIL_SEVERITY} --ignore-unfixed \
+            --exit-code 1 --no-progress --quiet ${LOCAL_IMAGE}
+
+          echo "IMAGE APPROVED: ${LOCAL_IMAGE}"
+        '''
+      }
+      post {
+        always  { archiveArtifacts artifacts: 'reports/trivy-image.*', allowEmptyArchive: true }
+        failure { echo 'BLOCKED: image failed the vulnerability gate - it would not reach ACR.' }
+      }
+    }
+
+    stage('9. Local smoke test') {
+      steps {
+        sh '''
+          docker rm -f cm-smoke >/dev/null 2>&1 || true
+          docker run -d --name cm-smoke --network ${CI_NETWORK} ${LOCAL_IMAGE}
+          for i in $(seq 1 20); do
+            if docker run --rm --network ${CI_NETWORK} curlimages/curl:8.8.0 \
+                 -sf http://cm-smoke:3000/health/ready >/dev/null 2>&1; then
+              echo "app is READY"; break
+            fi
+            [ $i -eq 20 ] && { echo "app never became ready"; docker logs cm-smoke; exit 1; }
+            sleep 2
+          done
+          docker run --rm --network ${CI_NETWORK} curlimages/curl:8.8.0 -s http://cm-smoke:3000/api/info
+          echo
+        '''
+      }
+      post { always { sh 'docker rm -f cm-smoke >/dev/null 2>&1 || true' } }
+    }
+  }
+
+  post {
+    success { echo "PASSED all local gates. Stages 10-13 (ACR push, AKS deploy) need Azure." }
+    always  {
+      sh 'docker image prune -f >/dev/null 2>&1 || true'
+      cleanWs(patterns: [[pattern: '.trivycache/**', type: 'EXCLUDE']])
+    }
+  }
+}

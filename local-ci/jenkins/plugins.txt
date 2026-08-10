@@ -1,0 +1,12 @@
+git
+github
+github-branch-source
+workflow-aggregator
+pipeline-stage-view
+docker-workflow
+sonar
+credentials-binding
+ansicolor
+timestamper
+ws-cleanup
+build-timeout
