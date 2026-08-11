@@ -3,7 +3,7 @@ pipeline {
 
   environment {
     // ---- Azure / registry -------------------------------------------------
-    ACR_NAME           = 'carmarketplaceacr'                  // <-- change me
+    ACR_NAME           = 'carmarketplaceacr37ae61'                  // <-- change me
     ACR_LOGIN_SERVER   = "${ACR_NAME}.azurecr.io"
     IMAGE_NAME         = 'car-marketplace'
 
@@ -13,7 +13,7 @@ pipeline {
     K8S_NAMESPACE      = 'car-marketplace'
     HELM_RELEASE       = 'car-marketplace'
     HELM_CHART         = 'helm/car-marketplace'
-    APP_HOST           = 'car-marketplace.example.com'        // <-- change me
+    APP_HOST           = 'car-marketplace.20.175.163.47.nip.io'        // <-- change me
 
     // ---- Security gates ---------------------------------------------------
     // Report on HIGH+, but only fail the build on CRITICAL that has a fix.

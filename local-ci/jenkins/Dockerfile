@@ -39,6 +39,32 @@ RUN curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/
       | sh -s -- -b /usr/local/bin \
  && trivy --version
 
+# ---- kubectl (static binary, latest stable) --------------------------------
+RUN set -eux; \
+    KV="$(curl -fsSL https://dl.k8s.io/release/stable.txt)"; \
+    curl -fsSL -o /usr/local/bin/kubectl "https://dl.k8s.io/release/${KV}/bin/linux/amd64/kubectl"; \
+    chmod +x /usr/local/bin/kubectl; \
+    kubectl version --client
+
+# ---- Helm 3 (official installer, no apt repo) ------------------------------
+RUN curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash \
+ && helm version --short
+
+# ---- Azure CLI -------------------------------------------------------------
+# Try Microsoft's deb installer; fall back to pip if the repo has no build for
+# this base image's Debian release. Belt and braces, because that exact failure
+# is what broke the first version of this image.
+RUN set -eux; \
+    (curl -sL https://aka.ms/InstallAzureCLIDeb | bash) || { \
+      apt-get update; \
+      apt-get install -y --no-install-recommends python3-venv python3-pip; \
+      python3 -m venv /opt/azure-cli; \
+      /opt/azure-cli/bin/pip install --no-cache-dir azure-cli; \
+      ln -sf /opt/azure-cli/bin/az /usr/local/bin/az; \
+      apt-get clean; rm -rf /var/lib/apt/lists/*; \
+    }; \
+    az version
+
 COPY plugins.txt /usr/share/jenkins/ref/plugins.txt
 RUN jenkins-plugin-cli --plugin-file /usr/share/jenkins/ref/plugins.txt --latest true
 
