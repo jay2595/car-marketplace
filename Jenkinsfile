@@ -23,7 +23,7 @@ pipeline {
     TRIVY_CACHE_DIR       = "${WORKSPACE}/.trivycache"
 
     // ---- SonarQube --------------------------------------------------------
-    SONAR_SERVER  = 'SonarQube'      // Manage Jenkins > System > SonarQube servers
+    SONAR_SERVER  = 'SonarQube-Local'      // Manage Jenkins > System > SonarQube servers
     SONAR_SCANNER = 'SonarScanner'   // Manage Jenkins > Tools > SonarQube Scanner
   }
 
@@ -288,7 +288,7 @@ pipeline {
     failure {
       // --atomic already rolls back a failed upgrade; this reports the end state.
       sh 'helm status ${HELM_RELEASE} -n ${K8S_NAMESPACE} || true'
-      sh 'kubectl get events -n ${K8S_NAMESPACE} --sort-by=.lastTimestamp | tail -20 || true'
+      sh 'kubectl get events -n ${K8S_NAMESPACE} --sort-by=.lastTimestamp 2>/dev/null | tail -20 || true'
     }
     always {
       sh 'docker image prune -f || true'
