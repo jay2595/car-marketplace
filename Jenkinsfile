@@ -223,8 +223,8 @@ pipeline {
             --namespace ${K8S_NAMESPACE} \
             --set image.repository=${IMAGE_REPO} \
             --set image.tag=${IMAGE_TAG} \
-            --set ingress.hosts[0].host=${APP_HOST} \
-            --set ingress.tls[0].hosts[0]=${APP_HOST} \
+            --set ingress.hosts[0].host=${APP_HOST} --set ingress.hosts[0].paths[0].path=/ --set ingress.hosts[0].paths[0].pathType=Prefix \
+            --set ingress.tls[0].secretName=car-marketplace-tls --set ingress.tls[0].hosts[0]=${APP_HOST} \
             > reports/helm-rendered.yaml
 
           # Server-side dry run catches schema errors before anything is applied
@@ -245,8 +245,8 @@ pipeline {
             --namespace ${K8S_NAMESPACE} --create-namespace \
             --set image.repository=${IMAGE_REPO} \
             --set image.tag=${IMAGE_TAG} \
-            --set ingress.hosts[0].host=${APP_HOST} \
-            --set ingress.tls[0].hosts[0]=${APP_HOST} \
+            --set ingress.hosts[0].host=${APP_HOST} --set ingress.hosts[0].paths[0].path=/ --set ingress.hosts[0].paths[0].pathType=Prefix \
+            --set ingress.tls[0].secretName=car-marketplace-tls --set ingress.tls[0].hosts[0]=${APP_HOST} \
             --atomic --wait --timeout 6m \
             --history-max 10
 
