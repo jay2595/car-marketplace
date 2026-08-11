@@ -83,7 +83,6 @@ pipeline {
             sh """
               ${scannerHome}/bin/sonar-scanner \
                 -Dsonar.projectKey=car-marketplace \
-                -Dsonar.branch.name=${env.BRANCH_NAME ?: 'main'} \
                 -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
             """
           }
